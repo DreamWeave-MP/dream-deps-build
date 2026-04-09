@@ -24,6 +24,10 @@
       "name": "openmw-mygui-osx",
       "platform": "osx"
     },
+    {
+      "name": "libxrandr",
+      "platform": "linux"
+    },
     "openmw-osg",
     {
       "name": "sdl2",
