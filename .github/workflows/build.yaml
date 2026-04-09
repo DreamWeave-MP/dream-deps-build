@@ -15,25 +15,18 @@ jobs:
       matrix:
         args:
           - triplet: x64-linux-dynamic
-            runner_image: ubuntu-24.04
-
-    runs-on: ${{ matrix.args.runner_image }}
+    runs-on: ubuntu-latest
+    container:
+      image: almalinux:8
     name: ${{ matrix.args.triplet }}
     steps:
+      - name: Install git for checkout
+        run: dnf install -y git
+
       - uses: actions/checkout@v4
-      - run: sudo apt update
-      - run: >
-          sudo apt install -y
-          autoconf-archive
-          libgl-dev
-          libltdl-dev
-          libegl1-mesa-dev
-          libx11-dev
-          libxft-dev
-          libxext-dev
-          libxkbcommon-dev
-          libwayland-dev
-          nasm
+
+      - name: Install system dependencies
+        run: bash -e scripts/install-system-deps.sh
 
       - name: Export GitHub Actions cache environment variables
         uses: actions/github-script@v6
@@ -42,10 +35,17 @@ jobs:
             core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
-      - uses: ./.github/actions/vcpkg-setup
+      - name: Setup vcpkg
+        run: |
+          bash -e scripts/setup-vcpkg.sh
+          echo "/opt/vcpkg" >> $GITHUB_PATH
+        env:
+          VCPKG_REVISION: ${{ env.VCPKG_REVISION }}
 
-      - name: Install vcpkg packages
-        run: vcpkg install --overlay-ports=ports --overlay-triplets=triplets --triplet ${{ matrix.args.triplet }} --host-triplet ${{ matrix.args.triplet }}
+      - name: Build deps
+        run: bash -e scripts/build-deps.sh
+        env:
+          TRIPLET: ${{ matrix.args.triplet }}
 
       - uses: ./.github/actions/vcpkg-export
         with:
