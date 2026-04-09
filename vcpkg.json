@@ -8,8 +8,7 @@
       "features": [
         "double-precision",
         "multithreading"
-      ],
-      "platform": "!linux"
+      ]
     },
     "ffmpeg",
     "freetype",
@@ -18,7 +17,7 @@
     "lz4",
     {
       "name": "mygui",
-      "platform": "!osx and !linux"
+      "platform": "!osx"
     },
     "openal-soft",
     {
