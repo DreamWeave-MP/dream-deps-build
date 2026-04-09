@@ -15,7 +15,7 @@ echo "=== Building image ($CONTAINER_ENGINE) ==="
 $CONTAINER_ENGINE build -t "$IMAGE_NAME" .
 
 echo "=== Copying deps archive from container ==="
-$CONTAINER_ENGINE run --rm -v "$OUTPUT_DIR":/host "$IMAGE_NAME" cp /out/vcpkg-x64-linux-dynamic.7z /host/
+$CONTAINER_ENGINE run --rm -v "$OUTPUT_DIR":/host:Z "$IMAGE_NAME" cp /out/vcpkg-x64-linux-dynamic.7z /host/
 
 echo "=== Cleaning up image ==="
 $CONTAINER_ENGINE rmi "$IMAGE_NAME"
