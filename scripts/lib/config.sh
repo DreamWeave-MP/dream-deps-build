@@ -54,6 +54,9 @@ BUILD_TOOLSET_ENABLE="$(config_profile_get TOOLSET_ENABLE)"
 BUILD_AUTOCONF_VERSION="$(config_profile_get AUTOCONF_VERSION)"
 BUILD_AUTOCONF_URL="$(config_profile_get AUTOCONF_URL)"
 BUILD_AUTOCONF_SHA512="$(config_profile_get AUTOCONF_SHA512)"
+BUILD_GLIBC_MAX="$(config_profile_get GLIBC_MAX)"
+BUILD_GLIBCXX_MAX="$(config_profile_get GLIBCXX_MAX)"
+BUILD_CXXABI_MAX="$(config_profile_get CXXABI_MAX)"
 
 missing_config=0
 config_require_non_empty "PROFILE_${PROFILE_UPPER}_IMAGE" "$BUILD_IMAGE" || missing_config=1
@@ -62,6 +65,7 @@ config_require_non_empty "PROFILE_${PROFILE_UPPER}_TOOLSET_ENABLE" "$BUILD_TOOLS
 config_require_non_empty "PROFILE_${PROFILE_UPPER}_AUTOCONF_VERSION" "$BUILD_AUTOCONF_VERSION" || missing_config=1
 config_require_non_empty "PROFILE_${PROFILE_UPPER}_AUTOCONF_URL" "$BUILD_AUTOCONF_URL" || missing_config=1
 config_require_non_empty "PROFILE_${PROFILE_UPPER}_AUTOCONF_SHA512" "$BUILD_AUTOCONF_SHA512" || missing_config=1
+config_require_non_empty "PROFILE_${PROFILE_UPPER}_GLIBC_MAX" "$BUILD_GLIBC_MAX" || missing_config=1
 
 if [ "$missing_config" -ne 0 ]; then
     return 1
@@ -79,6 +83,9 @@ export BUILD_TOOLSET_ENABLE
 export BUILD_AUTOCONF_VERSION
 export BUILD_AUTOCONF_URL
 export BUILD_AUTOCONF_SHA512
+export BUILD_GLIBC_MAX
+export BUILD_GLIBCXX_MAX
+export BUILD_CXXABI_MAX
 
 OPENMW_DEPS_CONFIG_LOADED=1
 export OPENMW_DEPS_CONFIG_LOADED
