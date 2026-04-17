@@ -90,28 +90,19 @@ We target AlmaLinux 8 as the ABI floor and verify `GLIBC`, `GLIBCXX`, and `CXXAB
 
 ### Quick Start
 
-```bash
-./scripts/doctor.sh
-./scripts/distrobox-cleanbuild.sh
-./scripts/verify-build.sh
-```
-
-This builds all dependencies, checks that all binaries meet OpenMW's ABI contract, and verifies the expected result.
-
-### Recommended Path: Distrobox
-
-Distrobox is recommended for the common case on desktop Linux or immutable distributions.
+Distrobox is recommended for the common case on desktop Linux and immutable distros.
 
 ```bash
-./scripts/doctor.sh
+# Just pick distrobox or podman
 ./scripts/distrobox-cleanbuild.sh
-./scripts/verify-build.sh
 
-# Build Alma 9 instead
-PROFILE=alma9 ./scripts/doctor.sh
+./scripts/container-cleanbuild.sh
+
+# You can build with Alma 9 as well
 PROFILE=alma9 ./scripts/distrobox-cleanbuild.sh
-PROFILE=alma9 ./scripts/verify-build.sh
 ```
+
+This builds all dependencies and performs artifact and ABI verification automatically before reporting success.
 
 ### Alternative Path: Podman or Docker
 
@@ -120,12 +111,10 @@ Some use cases might not suit distrobox. Both `docker` and `podman` are supporte
 ```bash
 MODE=container ./scripts/doctor.sh
 CONTAINER_ENGINE=podman ./scripts/container-cleanbuild.sh
-./scripts/verify-build.sh
 
 # Docker
 MODE=container ./scripts/doctor.sh
 CONTAINER_ENGINE=docker ./scripts/container-cleanbuild.sh
-./scripts/verify-build.sh
 ```
 
 ## Profiles
@@ -154,13 +143,36 @@ readelf --version-info <file> | grep CXXABI_
 
 Note that this is only a glance-check and a means to easily identify the version used for later updates. Real enforcement should be done by `verify-abi.sh`.
 
+### ABI Rebaseline Procedure
+
+Workflow:
+
+```bash
+# 1) Run a clean baseline build (includes verify-build)
+PROFILE=alma8 ./scripts/distrobox-cleanbuild.sh
+
+# 2) Re-run ABI checker to capture reported maxima for review notes
+PROFILE=alma8 TRIPLET=x64-linux-dynamic OUTPUT_DIR=. ./scripts/verify-abi.sh
+```
+
+Then:
+
+- Update `PROFILE_ALMA8_GLIBC_MAX` in `build.conf`.
+- Update `PROFILE_ALMA8_GLIBCXX_MAX` in `build.conf`.
+- Update `PROFILE_ALMA8_CXXABI_MAX` in `build.conf`.
+- Re-run `PROFILE=alma8 ./scripts/distrobox-cleanbuild.sh` to confirm the new ceilings pass.
+
+Expected PR review notes for an ABI rebaseline:
+
+- Why the ceiling increase is required.
+- Old value -> new value for each updated ABI key.
+- `verify-abi.sh` output snippet showing the highest seen ABI versions.
+- Confirmation that the build used the Alma profile via distrobox.
+
 ## Verification
 After a build, verify the output:
 
 ```bash
-# doctor.sh will default to MODE=distrobox
-./scripts/doctor.sh
-
 ./scripts/verify-build.sh
 ```
 
