@@ -41,7 +41,7 @@ jobs:
           TRIPLET: ${{ matrix.args.triplet }}
           OUTPUT_DIR: ${{ github.workspace }}
 
-      - name: Verify exported package
+      - name: Verify exported package and ABI
         run: bash -e scripts/verify-build.sh
         env:
           PROFILE: alma8

@@ -62,6 +62,9 @@ else
     echo "WARNING: 7z is not installed, skipping archive content check"
 fi
 
+echo "Running ABI verification"
+TRIPLET="$TRIPLET" OUTPUT_DIR="$OUTPUT_DIR" bash -e "$SCRIPT_DIR/verify-abi.sh"
+
 echo "Verification complete"
 echo "  archive: $ARCHIVE_PATH"
 echo "  metadata: $METADATA_PATH"

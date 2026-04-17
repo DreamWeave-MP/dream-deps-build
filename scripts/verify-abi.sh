@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/config.sh
+source "$SCRIPT_DIR/lib/config.sh"
+
+TRIPLET="${TRIPLET:-$DEFAULT_TRIPLET}"
+VCPKG_DIR="${VCPKG_DIR:-/opt/vcpkg}"
+OUTPUT_DIR="${OUTPUT_DIR:-$OPENMW_DEPS_REPO_ROOT}"
+ARCHIVE_PATH="$OUTPUT_DIR/vcpkg-$TRIPLET.7z"
+METADATA_PATH="$OUTPUT_DIR/vcpkg-$TRIPLET.build-meta"
+SCAN_ROOT="${ABI_SCAN_ROOT:-$VCPKG_DIR/installed/$TRIPLET}"
+
+tmpdir=""
+cleanup() {
+    if [ -n "$tmpdir" ] && [ -d "$tmpdir" ]; then
+        rm -rf "$tmpdir"
+    fi
+}
+trap cleanup EXIT
+
+version_gt() {
+    local left="$1"
+    local right="$2"
+
+    if [ -z "$left" ]; then
+        return 1
+    fi
+
+    if [ -z "$right" ]; then
+        return 0
+    fi
+
+    [ "$(printf '%s\n%s\n' "$left" "$right" | sort -V | awk 'END{print}')" = "$left" ] && [ "$left" != "$right" ]
+}
+
+resolve_scan_root() {
+    if [ -d "$SCAN_ROOT" ]; then
+        printf '%s\n' "$SCAN_ROOT"
+        return 0
+    fi
+
+    if [ -f "$METADATA_PATH" ]; then
+        local metadata_vcpkg_dir
+        metadata_vcpkg_dir="$(awk -F= '$1 == "vcpkg_dir" { print $2 }' "$METADATA_PATH")"
+        if [ -n "$metadata_vcpkg_dir" ] && [ -d "$metadata_vcpkg_dir/installed/$TRIPLET" ]; then
+            printf '%s\n' "$metadata_vcpkg_dir/installed/$TRIPLET"
+            return 0
+        fi
+    fi
+
+    if [ -f "$ARCHIVE_PATH" ] && command -v 7z >/dev/null 2>&1; then
+        tmpdir="$(mktemp -d)"
+        7z x -y "-o$tmpdir" "$ARCHIVE_PATH" >/dev/null 2>&1
+        extracted_scan_root="$(find "$tmpdir" -type d -path "*/installed/$TRIPLET" | awk 'NR == 1 { print; exit }')"
+        if [ -n "$extracted_scan_root" ] && [ -d "$extracted_scan_root" ]; then
+            printf '%s\n' "$extracted_scan_root"
+            return 0
+        fi
+    fi
+
+    echo "ERROR: Could not resolve ABI scan root." >&2
+    echo "  looked for: $SCAN_ROOT" >&2
+    echo "  archive fallback: $ARCHIVE_PATH" >&2
+    echo "  hint: set ABI_SCAN_ROOT or install 7z for archive fallback" >&2
+    return 1
+}
+
+SCAN_ROOT="$(resolve_scan_root)"
+
+echo "Verifying ABI ceiling"
+echo "  profile: $PROFILE"
+echo "  triplet: $TRIPLET"
+echo "  glibc max: $BUILD_GLIBC_MAX"
+echo "  scan root: $SCAN_ROOT"
+
+max_seen=""
+scanned_elf_files=0
+declare -a violations=()
+
+while IFS= read -r -d '' file; do
+    if ! readelf -h "$file" >/dev/null 2>&1; then
+        continue
+    fi
+
+    file_max_glibc="$(readelf --version-info "$file" 2>/dev/null | awk 'match($0, /GLIBC_[0-9]+\.[0-9]+/) { print substr($0, RSTART + 6, RLENGTH - 6) }' | sort -Vu | awk 'END { print }')"
+
+    if [ -z "$file_max_glibc" ]; then
+        continue
+    fi
+
+    scanned_elf_files=$((scanned_elf_files + 1))
+
+    if version_gt "$file_max_glibc" "$max_seen"; then
+        max_seen="$file_max_glibc"
+    fi
+
+    if version_gt "$file_max_glibc" "$BUILD_GLIBC_MAX"; then
+        violations+=("$file => GLIBC_$file_max_glibc")
+    fi
+done < <(find "$SCAN_ROOT" -type f -print0)
+
+if [ "$scanned_elf_files" -eq 0 ]; then
+    echo "ERROR: No ELF files with GLIBC symbol versions were found in $SCAN_ROOT" >&2
+    exit 1
+fi
+
+echo "  scanned files: $scanned_elf_files"
+echo "  highest seen: GLIBC_$max_seen"
+
+if [ "${#violations[@]}" -gt 0 ]; then
+    echo "ERROR: ABI check failed; found GLIBC versions above GLIBC_$BUILD_GLIBC_MAX" >&2
+    shown=0
+    for violation in "${violations[@]}"; do
+        echo "  $violation" >&2
+        shown=$((shown + 1))
+        if [ "$shown" -ge 20 ]; then
+            remaining=$((${#violations[@]} - shown))
+            if [ "$remaining" -gt 0 ]; then
+                echo "  ... and $remaining more" >&2
+            fi
+            break
+        fi
+    done
+    exit 1
+fi
+
+echo "ABI verification complete"
