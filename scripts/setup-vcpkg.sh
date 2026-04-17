@@ -2,6 +2,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/fail.sh
+source "$SCRIPT_DIR/lib/fail.sh"
+openmw_init_error_trap
 # shellcheck source=lib/config.sh
 source "$SCRIPT_DIR/lib/config.sh"
 

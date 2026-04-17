@@ -41,13 +41,6 @@ jobs:
           TRIPLET: ${{ matrix.args.triplet }}
           OUTPUT_DIR: ${{ github.workspace }}
 
-      - name: Verify exported package and ABI
-        run: bash -e scripts/verify-build.sh
-        env:
-          PROFILE: alma8
-          TRIPLET: ${{ matrix.args.triplet }}
-          OUTPUT_DIR: ${{ github.workspace }}
-
       - uses: ./.github/actions/vcpkg-export
         with:
           output-name: vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}

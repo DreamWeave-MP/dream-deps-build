@@ -2,6 +2,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/fail.sh
+source "$SCRIPT_DIR/lib/fail.sh"
+openmw_init_error_trap
 # shellcheck source=lib/config.sh
 source "$SCRIPT_DIR/lib/config.sh"
 REPO_ROOT="${OPENMW_DEPS_REPO_ROOT}"
@@ -30,6 +33,11 @@ echo "  triplet: $TRIPLET"
 echo "  image: $BUILD_IMAGE"
 echo "  vcpkg revision: $VCPKG_REVISION"
 echo "  output dir: $OUTPUT_DIR"
+
+if [ "${OPENMW_DEPS_SKIP_DOCTOR:-0}" != "1" ]; then
+    echo "=== Running preflight doctor (core mode) ==="
+    MODE=core TRIPLET="$TRIPLET" OUTPUT_DIR="$OUTPUT_DIR" PROFILE="$PROFILE" bash -e "$SCRIPT_DIR/doctor.sh"
+fi
 
 echo "=== Installing system dependencies ==="
 run_as_root bash -e "$SCRIPT_DIR/install-system-deps.sh"
@@ -60,6 +68,10 @@ vcpkg_revision=$VCPKG_REVISION
 vcpkg_dir=$VCPKG_DIR
 built_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
+
+echo ""
+echo "=== Verifying exported build artifacts ==="
+TRIPLET="$TRIPLET" OUTPUT_DIR="$OUTPUT_DIR" PROFILE="$PROFILE" bash -e "$SCRIPT_DIR/verify-build.sh"
 
 echo ""
 echo "=== Done ==="
