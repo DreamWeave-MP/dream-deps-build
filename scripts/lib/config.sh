@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+if [ "${OPENMW_DEPS_CONFIG_LOADED:-0}" -eq 1 ]; then
+    return 0
+fi
+
+set -u
+
+CONFIG_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+OPENMW_DEPS_REPO_ROOT="${OPENMW_DEPS_REPO_ROOT:-$(cd "$CONFIG_LIB_DIR/../.." && pwd)}"
+OPENMW_DEPS_BUILD_CONF="${OPENMW_DEPS_BUILD_CONF:-$OPENMW_DEPS_REPO_ROOT/build.conf}"
+
+if [ ! -f "$OPENMW_DEPS_BUILD_CONF" ]; then
+    echo "ERROR: build config not found at $OPENMW_DEPS_BUILD_CONF" >&2
+    return 1
+fi
+
+# shellcheck source=/dev/null
+source "$OPENMW_DEPS_BUILD_CONF"
+
+if [ -z "${DEFAULT_PROFILE:-}" ]; then
+    echo "ERROR: DEFAULT_PROFILE is not set in $OPENMW_DEPS_BUILD_CONF" >&2
+    return 1
+fi
+
+if [ -z "${VCPKG_REVISION:-}" ]; then
+    echo "ERROR: VCPKG_REVISION is not set in $OPENMW_DEPS_BUILD_CONF" >&2
+    return 1
+fi
+
+PROFILE="${PROFILE:-$DEFAULT_PROFILE}"
+PROFILE_UPPER="$(printf '%s' "$PROFILE" | tr '[:lower:]-' '[:upper:]_')"
+
+_profile_var_prefix="PROFILE_${PROFILE_UPPER}_"
+
+config_profile_get() {
+    local key="$1"
+    local var_name="${_profile_var_prefix}${key}"
+    printf '%s' "${!var_name:-}"
+}
+
+config_require_non_empty() {
+    local name="$1"
+    local value="$2"
+    if [ -z "$value" ]; then
+        echo "ERROR: Missing required config value: $name (profile=$PROFILE)" >&2
+        return 1
+    fi
+}
+
+BUILD_IMAGE="$(config_profile_get IMAGE)"
+BUILD_TOOLSET_PACKAGE="$(config_profile_get TOOLSET_PACKAGE)"
+BUILD_TOOLSET_ENABLE="$(config_profile_get TOOLSET_ENABLE)"
+BUILD_AUTOCONF_VERSION="$(config_profile_get AUTOCONF_VERSION)"
+BUILD_AUTOCONF_URL="$(config_profile_get AUTOCONF_URL)"
+BUILD_AUTOCONF_SHA512="$(config_profile_get AUTOCONF_SHA512)"
+
+missing_config=0
+config_require_non_empty "PROFILE_${PROFILE_UPPER}_IMAGE" "$BUILD_IMAGE" || missing_config=1
+config_require_non_empty "PROFILE_${PROFILE_UPPER}_TOOLSET_PACKAGE" "$BUILD_TOOLSET_PACKAGE" || missing_config=1
+config_require_non_empty "PROFILE_${PROFILE_UPPER}_TOOLSET_ENABLE" "$BUILD_TOOLSET_ENABLE" || missing_config=1
+config_require_non_empty "PROFILE_${PROFILE_UPPER}_AUTOCONF_VERSION" "$BUILD_AUTOCONF_VERSION" || missing_config=1
+config_require_non_empty "PROFILE_${PROFILE_UPPER}_AUTOCONF_URL" "$BUILD_AUTOCONF_URL" || missing_config=1
+config_require_non_empty "PROFILE_${PROFILE_UPPER}_AUTOCONF_SHA512" "$BUILD_AUTOCONF_SHA512" || missing_config=1
+
+if [ "$missing_config" -ne 0 ]; then
+    return 1
+fi
+
+export OPENMW_DEPS_REPO_ROOT
+export OPENMW_DEPS_BUILD_CONF
+export PROFILE
+export DEFAULT_PROFILE
+export DEFAULT_TRIPLET
+export VCPKG_REVISION
+export BUILD_IMAGE
+export BUILD_TOOLSET_PACKAGE
+export BUILD_TOOLSET_ENABLE
+export BUILD_AUTOCONF_VERSION
+export BUILD_AUTOCONF_URL
+export BUILD_AUTOCONF_SHA512
+
+OPENMW_DEPS_CONFIG_LOADED=1
+export OPENMW_DEPS_CONFIG_LOADED
