@@ -10,6 +10,15 @@ openmw_fail() {
 
     trap - ERR
 
+    if [ "${BASH_SUBSHELL:-0}" -gt 0 ]; then
+        exit "$exit_code"
+    fi
+
+    if [ "${OPENMW_FAIL_REPORTED:-0}" -eq 1 ]; then
+        exit "$exit_code"
+    fi
+    OPENMW_FAIL_REPORTED=1
+
     echo "ERROR: command failed" >&2
     echo "  script: $script_path" >&2
     echo "  profile: $profile" >&2
@@ -22,6 +31,13 @@ openmw_fail() {
 }
 
 openmw_init_error_trap() {
+    if [ "${OPENMW_FAIL_TRAP_ACTIVE:-0}" = "1" ]; then
+        return 0
+    fi
+
+    OPENMW_FAIL_TRAP_ACTIVE=1
+    export OPENMW_FAIL_TRAP_ACTIVE
+
     set -E
     trap 'openmw_fail "$?" "$BASH_COMMAND" "${BASH_SOURCE[0]:-$0}"' ERR
 }
