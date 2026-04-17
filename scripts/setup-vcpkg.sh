@@ -1,19 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/config.sh
+source "$SCRIPT_DIR/lib/config.sh"
+
 VCPKG_DIR="${VCPKG_DIR:-/opt/vcpkg}"
 
-# Read the pinned revision from the workflow file
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-VCPKG_REVISION="${VCPKG_REVISION:-$(grep 'VCPKG_REVISION:' "$REPO_ROOT/.github/workflows/build.yaml" | head -1 | awk '{print $2}')}"
-
-if [ -z "$VCPKG_REVISION" ]; then
-    echo "ERROR: Could not determine VCPKG_REVISION" >&2
-    exit 1
-fi
-
-echo "Setting up vcpkg at revision $VCPKG_REVISION in $VCPKG_DIR"
+echo "Setting up vcpkg"
+echo "  profile: $PROFILE"
+echo "  revision: $VCPKG_REVISION"
+echo "  install dir: $VCPKG_DIR"
 
 if [ -d "$VCPKG_DIR/.git" ]; then
     cd "$VCPKG_DIR"
@@ -25,7 +22,7 @@ else
     git checkout "$VCPKG_REVISION"
 fi
 
-source /opt/rh/gcc-toolset-13/enable
+source "$BUILD_TOOLSET_ENABLE"
 ./bootstrap-vcpkg.sh -disableMetrics
 
 echo ""
