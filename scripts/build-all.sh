@@ -51,6 +51,17 @@ vcpkg export \
     --output-dir "$OUTPUT_DIR" \
     --output "vcpkg-$TRIPLET"
 
+metadata_file="$OUTPUT_DIR/vcpkg-$TRIPLET.build-meta"
+cat > "$metadata_file" <<EOF
+profile=$PROFILE
+triplet=$TRIPLET
+image=$BUILD_IMAGE
+vcpkg_revision=$VCPKG_REVISION
+vcpkg_dir=$VCPKG_DIR
+built_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+EOF
+
 echo ""
 echo "=== Done ==="
 echo "Output: $OUTPUT_DIR/vcpkg-$TRIPLET.7z"
+echo "Metadata: $metadata_file"
