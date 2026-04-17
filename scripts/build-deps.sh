@@ -1,17 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VCPKG_DIR="${VCPKG_DIR:-/opt/vcpkg}"
-TRIPLET="${TRIPLET:-x64-linux-dynamic}"
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# shellcheck source=lib/config.sh
+source "$SCRIPT_DIR/lib/config.sh"
+
+VCPKG_DIR="${VCPKG_DIR:-/opt/vcpkg}"
+TRIPLET="${TRIPLET:-$DEFAULT_TRIPLET}"
+REPO_ROOT="${OPENMW_DEPS_REPO_ROOT}"
 
 export PATH="$VCPKG_DIR:$PATH"
 
-source /opt/rh/gcc-toolset-13/enable
+source "$BUILD_TOOLSET_ENABLE"
 
-echo "Building deps with triplet=$TRIPLET"
+echo "Building dependencies"
+echo "  profile: $PROFILE"
+echo "  triplet: $TRIPLET"
+echo "  vcpkg revision: $VCPKG_REVISION"
+echo "  vcpkg dir: $VCPKG_DIR"
 
 cd "$REPO_ROOT"
 vcpkg install \
