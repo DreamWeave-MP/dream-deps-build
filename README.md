@@ -79,3 +79,108 @@ else
     QT_PATH=$(qmake -v | sed -rn -e "s/Using Qt version [.0-9]+ in //p")
 fi
 ```
+
+## Linux Build System
+
+Due to varying complications with Linux distribution, the setup is much more complex behind the scenes than other operating systems, but is designed for maximum flexibility and reproducibility.
+
+The primary goal is to pin a stable version of the C/++ ABI by building on a distribution based on an old one, and verifying the built binaries are all forward-compatible with expected Linux targets.
+
+We target AlmaLinux 8 as the ABI floor and verify `GLIBC`, `GLIBCXX`, and `CXXABI` ceilings.
+
+### Quick Start
+
+```bash
+./scripts/doctor.sh
+./scripts/distrobox-cleanbuild.sh
+./scripts/verify-build.sh
+```
+
+This builds all dependencies, checks that all binaries meet OpenMW's ABI contract, and verifies the expected result.
+
+### Recommended Path: Distrobox
+
+Distrobox is recommended for the common case on desktop Linux or immutable distributions.
+
+```bash
+./scripts/doctor.sh
+./scripts/distrobox-cleanbuild.sh
+./scripts/verify-build.sh
+
+# Build Alma 9 instead
+PROFILE=alma9 ./scripts/doctor.sh
+PROFILE=alma9 ./scripts/distrobox-cleanbuild.sh
+PROFILE=alma9 ./scripts/verify-build.sh
+```
+
+### Alternative Path: Podman or Docker
+
+Some use cases might not suit distrobox. Both `docker` and `podman` are supported for maximum flexibility.
+
+```bash
+MODE=container ./scripts/doctor.sh
+CONTAINER_ENGINE=podman ./scripts/container-cleanbuild.sh
+./scripts/verify-build.sh
+
+# Docker
+MODE=container ./scripts/doctor.sh
+CONTAINER_ENGINE=docker ./scripts/container-cleanbuild.sh
+./scripts/verify-build.sh
+```
+
+## Profiles
+
+Alma 8 works well for now but for forward compatibility Alma 9 is also supported.
+
+Use either `PROFILE=alma8` or `PROFILE=alma9` when running the build scripts to switch between them.
+
+## ABI Contract
+
+Linux's C ABI drifts over time and only ensures forward compatibility, but not backward compatibility.
+
+All built artifacts are checked against:
+
+- GLIBC
+- GLIBCXX
+- CXXABI
+
+The current baseline is AlmaLinux 8. The build fails if any exported binary requires a newer ABI than the ceiling we declare in the build system.
+
+You can manually do a quick spot-check on any of the binaries yourself on a Linux system by doing the following:
+
+```bash
+readelf --version-info <file> | grep CXXABI_
+```
+
+Note that this is only a glance-check and a means to easily identify the version used for later updates. Real enforcement should be done by `verify-abi.sh`.
+
+## Verification
+After a build, verify the output:
+
+```bash
+# doctor.sh will default to MODE=distrobox
+./scripts/doctor.sh
+
+./scripts/verify-build.sh
+```
+
+This checks:
+- archive and metadata exist
+- archive layout is correct
+- ABI ceilings are satisfied
+
+## Troubleshooting
+
+`doctor.sh` should ensure you meet all the requirements to actually build the dependencies.
+
+If it fails, check:
+
+- `distrobox` is available for the recommended path
+- `podman` or `docker` is installed for container mode
+- You can actually write to the target output directory
+- SELinux volume labels are supported on your container engine
+- `sudo` is available (!)
+
+If ABI verification fails, it's probably due to the build somehow having picked up a newer toolchain than the configured baseline.
+
+As in, you tried to build them outside of the provided container environment.
