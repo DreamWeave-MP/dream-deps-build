@@ -73,9 +73,13 @@ echo "Verifying ABI ceiling"
 echo "  profile: $PROFILE"
 echo "  triplet: $TRIPLET"
 echo "  glibc max: $BUILD_GLIBC_MAX"
+echo "  glibcxx max: $BUILD_GLIBCXX_MAX"
+echo "  cxxabi max: $BUILD_CXXABI_MAX"
 echo "  scan root: $SCAN_ROOT"
 
-max_seen=""
+max_seen_glibc=""
+max_seen_glibcxx=""
+max_seen_cxxabi=""
 scanned_elf_files=0
 declare -a violations=()
 
@@ -84,33 +88,54 @@ while IFS= read -r -d '' file; do
         continue
     fi
 
-    file_max_glibc="$(readelf --version-info "$file" 2>/dev/null | awk 'match($0, /GLIBC_[0-9]+\.[0-9]+/) { print substr($0, RSTART + 6, RLENGTH - 6) }' | sort -Vu | awk 'END { print }')"
+    version_info="$(readelf --version-info "$file" 2>/dev/null || true)"
+    file_max_glibc="$(printf '%s\n' "$version_info" | awk 'match($0, /GLIBC_[0-9]+(\.[0-9]+)+/) { print substr($0, RSTART + 6, RLENGTH - 6) }' | sort -Vu | awk 'END { print }')"
+    file_max_glibcxx="$(printf '%s\n' "$version_info" | awk 'match($0, /GLIBCXX_[0-9]+(\.[0-9]+)+/) { print substr($0, RSTART + 8, RLENGTH - 8) }' | sort -Vu | awk 'END { print }')"
+    file_max_cxxabi="$(printf '%s\n' "$version_info" | awk 'match($0, /CXXABI_[0-9]+(\.[0-9]+)+/) { print substr($0, RSTART + 7, RLENGTH - 7) }' | sort -Vu | awk 'END { print }')"
 
-    if [ -z "$file_max_glibc" ]; then
+    if [ -z "$file_max_glibc" ] && [ -z "$file_max_glibcxx" ] && [ -z "$file_max_cxxabi" ]; then
         continue
     fi
 
     scanned_elf_files=$((scanned_elf_files + 1))
 
-    if version_gt "$file_max_glibc" "$max_seen"; then
-        max_seen="$file_max_glibc"
+    if version_gt "$file_max_glibc" "$max_seen_glibc"; then
+        max_seen_glibc="$file_max_glibc"
     fi
 
     if version_gt "$file_max_glibc" "$BUILD_GLIBC_MAX"; then
         violations+=("$file => GLIBC_$file_max_glibc")
     fi
+
+    if version_gt "$file_max_glibcxx" "$max_seen_glibcxx"; then
+        max_seen_glibcxx="$file_max_glibcxx"
+    fi
+
+    if version_gt "$file_max_glibcxx" "$BUILD_GLIBCXX_MAX"; then
+        violations+=("$file => GLIBCXX_$file_max_glibcxx")
+    fi
+
+    if version_gt "$file_max_cxxabi" "$max_seen_cxxabi"; then
+        max_seen_cxxabi="$file_max_cxxabi"
+    fi
+
+    if version_gt "$file_max_cxxabi" "$BUILD_CXXABI_MAX"; then
+        violations+=("$file => CXXABI_$file_max_cxxabi")
+    fi
 done < <(find "$SCAN_ROOT" -type f -print0)
 
 if [ "$scanned_elf_files" -eq 0 ]; then
-    echo "ERROR: No ELF files with GLIBC symbol versions were found in $SCAN_ROOT" >&2
+    echo "ERROR: No ELF files with ABI symbol versions were found in $SCAN_ROOT" >&2
     exit 1
 fi
 
 echo "  scanned files: $scanned_elf_files"
-echo "  highest seen: GLIBC_$max_seen"
+echo "  highest seen: GLIBC_${max_seen_glibc:-none}"
+echo "  highest seen: GLIBCXX_${max_seen_glibcxx:-none}"
+echo "  highest seen: CXXABI_${max_seen_cxxabi:-none}"
 
 if [ "${#violations[@]}" -gt 0 ]; then
-    echo "ERROR: ABI check failed; found GLIBC versions above GLIBC_$BUILD_GLIBC_MAX" >&2
+    echo "ERROR: ABI check failed; found symbol versions above configured ceilings" >&2
     shown=0
     for violation in "${violations[@]}"; do
         echo "  $violation" >&2

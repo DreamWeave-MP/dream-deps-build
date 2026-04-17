@@ -66,6 +66,8 @@ config_require_non_empty "PROFILE_${PROFILE_UPPER}_AUTOCONF_VERSION" "$BUILD_AUT
 config_require_non_empty "PROFILE_${PROFILE_UPPER}_AUTOCONF_URL" "$BUILD_AUTOCONF_URL" || missing_config=1
 config_require_non_empty "PROFILE_${PROFILE_UPPER}_AUTOCONF_SHA512" "$BUILD_AUTOCONF_SHA512" || missing_config=1
 config_require_non_empty "PROFILE_${PROFILE_UPPER}_GLIBC_MAX" "$BUILD_GLIBC_MAX" || missing_config=1
+config_require_non_empty "PROFILE_${PROFILE_UPPER}_GLIBCXX_MAX" "$BUILD_GLIBCXX_MAX" || missing_config=1
+config_require_non_empty "PROFILE_${PROFILE_UPPER}_CXXABI_MAX" "$BUILD_CXXABI_MAX" || missing_config=1
 
 if [ "$missing_config" -ne 0 ]; then
     return 1
