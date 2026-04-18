@@ -39,6 +39,13 @@ version_gt() {
 }
 
 resolve_scan_root() {
+    local manifest_scan_root="${ABI_SCAN_ROOT:-$OPENMW_DEPS_REPO_ROOT/vcpkg_installed/$TRIPLET}"
+
+    if [ -d "$manifest_scan_root" ]; then
+        printf '%s\n' "$manifest_scan_root"
+        return 0
+    fi
+
     if [ -d "$SCAN_ROOT" ]; then
         printf '%s\n' "$SCAN_ROOT"
         return 0
