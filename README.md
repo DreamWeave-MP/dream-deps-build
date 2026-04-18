@@ -190,8 +190,11 @@ If it fails, check:
 - `distrobox` is available for the recommended path
 - `podman` or `docker` is installed for container mode
 - You can actually write to the target output directory
+- `7z` is installed for archive export and ABI fallback checks
 - SELinux volume labels are supported on your container engine
 - `sudo` is available (!)
+- Your tmpfs may be full; try rebooting
+- Check for old container images clogging your quota and clear them
 
 If ABI verification fails, it's probably due to the build somehow having picked up a newer toolchain than the configured baseline.
 
