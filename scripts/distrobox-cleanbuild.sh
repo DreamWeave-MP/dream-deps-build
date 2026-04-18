@@ -16,7 +16,7 @@ echo "=== Running preflight doctor (distrobox mode) ==="
 MODE=distrobox TRIPLET="$TRIPLET" OUTPUT_DIR="$OUTPUT_DIR" PROFILE="$PROFILE" bash -e "$SCRIPT_DIR/doctor.sh"
 
 echo "=== Creating fresh $BOX_NAME ==="
-distrobox create --name "$BOX_NAME" --image "$BUILD_IMAGE"
+distrobox create --yes --name "$BOX_NAME" --image "$BUILD_IMAGE"
 
 echo "=== Running build-all.sh inside $BOX_NAME ==="
 distrobox enter "$BOX_NAME" -- env \
