@@ -21,7 +21,7 @@ jobs:
     name: ${{ matrix.args.triplet }}
     steps:
       - name: Install git for checkout
-        run: dnf install -y git
+        run: dnf install -y git curl p7zip
 
       - uses: actions/checkout@v4
 
@@ -41,16 +41,19 @@ jobs:
           TRIPLET: ${{ matrix.args.triplet }}
           OUTPUT_DIR: ${{ github.workspace }}
 
-      - uses: ./.github/actions/vcpkg-export
-        with:
-          output-name: vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}
-          export-type: 7zip
+      - name: Rename exported artifacts
+        run: |
+          mv "vcpkg-${{ matrix.args.triplet }}.7z" "vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}.7z"
+          mv "vcpkg-${{ matrix.args.triplet }}.build-meta" "vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}.build-meta"
+        working-directory: ${{ github.workspace }}
 
       - name: Store exported vcpkg packages
         uses: actions/upload-artifact@v4
         with:
           name: vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}
-          path: ${{ github.workspace }}/vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}.7z
+          path: |
+            ${{ github.workspace }}/vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}.7z
+            ${{ github.workspace }}/vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}.build-meta
 
   macos:
     strategy:
