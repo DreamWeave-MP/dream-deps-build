@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ "${OPENMW_DEPS_CONFIG_LOADED:-0}" -eq 1 ]; then
+if [ "${OPENMW_DEPS_CONFIG_LOADED:-0}" -eq 1 ] && [ "${OPENMW_DEPS_CONFIG_PID:-0}" -eq "$$" ]; then
     return 0
 fi
 
@@ -48,6 +48,28 @@ config_require_non_empty() {
     fi
 }
 
+resolve_7zip_cmd() {
+    local candidate
+
+    for candidate in 7z 7zz 7za; do
+        if command -v "$candidate" >/dev/null 2>&1; then
+            printf '%s' "$candidate"
+            return 0
+        fi
+    done
+
+    printf ''
+}
+
+resolve_effective_7zip_cmd() {
+    if [ -n "${OPENMW_DEPS_7ZIP_CMD:-}" ] && command -v "$OPENMW_DEPS_7ZIP_CMD" >/dev/null 2>&1; then
+        printf '%s' "$OPENMW_DEPS_7ZIP_CMD"
+        return 0
+    fi
+
+    resolve_7zip_cmd
+}
+
 BUILD_IMAGE="$(config_profile_get IMAGE)"
 BUILD_TOOLSET_PACKAGE="$(config_profile_get TOOLSET_PACKAGE)"
 BUILD_TOOLSET_ENABLE="$(config_profile_get TOOLSET_ENABLE)"
@@ -57,6 +79,7 @@ BUILD_AUTOCONF_SHA512="$(config_profile_get AUTOCONF_SHA512)"
 BUILD_GLIBC_MAX="$(config_profile_get GLIBC_MAX)"
 BUILD_GLIBCXX_MAX="$(config_profile_get GLIBCXX_MAX)"
 BUILD_CXXABI_MAX="$(config_profile_get CXXABI_MAX)"
+OPENMW_DEPS_7ZIP_CMD="$(resolve_effective_7zip_cmd)"
 
 missing_config=0
 config_require_non_empty "PROFILE_${PROFILE_UPPER}_IMAGE" "$BUILD_IMAGE" || missing_config=1
@@ -88,6 +111,7 @@ export BUILD_AUTOCONF_SHA512
 export BUILD_GLIBC_MAX
 export BUILD_GLIBCXX_MAX
 export BUILD_CXXABI_MAX
+export OPENMW_DEPS_7ZIP_CMD
 
 OPENMW_DEPS_CONFIG_LOADED=1
-export OPENMW_DEPS_CONFIG_LOADED
+OPENMW_DEPS_CONFIG_PID=$$

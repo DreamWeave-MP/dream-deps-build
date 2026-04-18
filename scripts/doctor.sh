@@ -70,7 +70,11 @@ echo "  vcpkg revision: $VCPKG_REVISION"
 check_command bash "bash is available"
 check_command git "git is available"
 check_command curl "curl is available"
-check_command 7z "7z is available"
+if [ -n "$OPENMW_DEPS_7ZIP_CMD" ]; then
+    check_ok "7zip command is available ($OPENMW_DEPS_7ZIP_CMD)"
+else
+    check_fail "7zip command is not available (tried: 7z, 7zz, 7za)"
+fi
 
 if [ -d "$OUTPUT_DIR" ]; then
     if [ -w "$OUTPUT_DIR" ]; then
@@ -96,6 +100,12 @@ fi
 case "$MODE" in
     distrobox)
         check_command distrobox "distrobox is available"
+        engine="${CONTAINER_ENGINE:-podman}"
+        if command -v "$engine" >/dev/null 2>&1; then
+            check_ok "container engine is available ($engine)"
+        else
+            check_fail "container engine is not available for Dockerfile builds in distrobox mode: $engine"
+        fi
         ;;
     container)
         engine="${CONTAINER_ENGINE:-}"

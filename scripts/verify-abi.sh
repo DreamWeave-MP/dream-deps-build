@@ -60,9 +60,9 @@ resolve_scan_root() {
         fi
     fi
 
-    if [ -f "$ARCHIVE_PATH" ] && command -v 7z >/dev/null 2>&1; then
+    if [ -f "$ARCHIVE_PATH" ] && [ -n "$OPENMW_DEPS_7ZIP_CMD" ]; then
         tmpdir="$(mktemp -d)"
-        7z x -y "-o$tmpdir" "$ARCHIVE_PATH" >/dev/null 2>&1
+        "$OPENMW_DEPS_7ZIP_CMD" x -y "-o$tmpdir" "$ARCHIVE_PATH" >/dev/null 2>&1
         extracted_scan_root="$(find "$tmpdir" -type d -path "*/installed/$TRIPLET" | awk 'NR == 1 { print; exit }')"
         if [ -n "$extracted_scan_root" ] && [ -d "$extracted_scan_root" ]; then
             printf '%s\n' "$extracted_scan_root"
@@ -73,7 +73,7 @@ resolve_scan_root() {
     echo "ERROR: Could not resolve ABI scan root." >&2
     echo "  looked for: $SCAN_ROOT" >&2
     echo "  archive fallback: $ARCHIVE_PATH" >&2
-    echo "  hint: set ABI_SCAN_ROOT or install 7z for archive fallback" >&2
+    echo "  hint: set ABI_SCAN_ROOT or provide a 7zip command (7z, 7zz, or 7za) for archive fallback" >&2
     return 1
 }
 

@@ -93,13 +93,18 @@ We target AlmaLinux 8 as the ABI floor and verify `GLIBC`, `GLIBCXX`, and `CXXAB
 Distrobox is recommended for the common case on desktop Linux and immutable distros.
 
 ```bash
-# Just pick distrobox or podman
-./scripts/distrobox-cleanbuild.sh
+# Default mode is distrobox
+./scripts/cleanbuild.sh
 
-./scripts/container-cleanbuild.sh
+# Container mode (podman or docker)
+MODE=container CONTAINER_ENGINE=podman ./scripts/cleanbuild.sh
+MODE=container CONTAINER_ENGINE=docker ./scripts/cleanbuild.sh
 
 # You can build with Alma 9 as well
-PROFILE=alma9 ./scripts/distrobox-cleanbuild.sh
+PROFILE=alma9 ./scripts/cleanbuild.sh
+
+# Remove the local runtime image and runtime container/box after each run
+REMOVE_OPENMW_DEPS_IMAGE=1 ./scripts/cleanbuild.sh
 ```
 
 This builds all dependencies and performs artifact and ABI verification automatically before reporting success.
@@ -110,11 +115,11 @@ Some use cases might not suit distrobox. Both `docker` and `podman` are supporte
 
 ```bash
 MODE=container ./scripts/doctor.sh
-CONTAINER_ENGINE=podman ./scripts/container-cleanbuild.sh
+CONTAINER_ENGINE=podman ./scripts/cleanbuild.sh
 
 # Docker
 MODE=container ./scripts/doctor.sh
-CONTAINER_ENGINE=docker ./scripts/container-cleanbuild.sh
+CONTAINER_ENGINE=docker ./scripts/cleanbuild.sh
 ```
 
 ## Profiles
@@ -149,7 +154,7 @@ Workflow:
 
 ```bash
 # 1) Run a clean baseline build (includes verify-build)
-PROFILE=alma8 ./scripts/distrobox-cleanbuild.sh
+PROFILE=alma8 ./scripts/cleanbuild.sh
 
 # 2) Re-run ABI checker to capture reported maxima for review notes
 PROFILE=alma8 TRIPLET=x64-linux-dynamic OUTPUT_DIR=. ./scripts/verify-abi.sh
@@ -160,7 +165,7 @@ Then:
 - Update `PROFILE_ALMA8_GLIBC_MAX` in `build.conf`.
 - Update `PROFILE_ALMA8_GLIBCXX_MAX` in `build.conf`.
 - Update `PROFILE_ALMA8_CXXABI_MAX` in `build.conf`.
-- Re-run `PROFILE=alma8 ./scripts/distrobox-cleanbuild.sh` to confirm the new ceilings pass.
+- Re-run `PROFILE=alma8 ./scripts/cleanbuild.sh` to confirm the new ceilings pass.
 
 Expected PR review notes for an ABI rebaseline:
 
@@ -188,7 +193,7 @@ This checks:
 If it fails, check:
 
 - `distrobox` is available for the recommended path
-- `podman` or `docker` is installed for container mode
+- `podman` or `docker` is installed for container mode -> If using docker, make sure to set `CONTAINER_ENGINE=docker` when building
 - You can actually write to the target output directory
 - `7z` is installed for archive export and ABI fallback checks
 - SELinux volume labels are supported on your container engine

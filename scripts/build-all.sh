@@ -42,6 +42,14 @@ fi
 echo "=== Installing system dependencies ==="
 run_as_root bash -e "$SCRIPT_DIR/install-system-deps.sh"
 
+OPENMW_DEPS_7ZIP_CMD="$(resolve_7zip_cmd)"
+if [ -z "$OPENMW_DEPS_7ZIP_CMD" ]; then
+    echo "ERROR: No 7zip command found after dependency installation (tried: 7z, 7zz, 7za)" >&2
+    exit 1
+fi
+export OPENMW_DEPS_7ZIP_CMD
+echo "  7zip command: $OPENMW_DEPS_7ZIP_CMD"
+
 echo -e "\n=== Setting up vcpkg ==="
 run_as_root bash -e "$SCRIPT_DIR/setup-vcpkg.sh"
 run_as_root chown -R "$(id -u):$(id -g)" "$VCPKG_DIR"

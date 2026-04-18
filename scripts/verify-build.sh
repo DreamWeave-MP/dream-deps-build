@@ -52,9 +52,9 @@ if [ "$metadata_revision" != "$VCPKG_REVISION" ]; then
     exit 1
 fi
 
-if command -v 7z >/dev/null 2>&1; then
+if [ -n "$OPENMW_DEPS_7ZIP_CMD" ]; then
     temp_list="$(mktemp)"
-    7z l "$ARCHIVE_PATH" > "$temp_list"
+    "$OPENMW_DEPS_7ZIP_CMD" l "$ARCHIVE_PATH" > "$temp_list"
     if ! grep -q "installed/$TRIPLET" "$temp_list"; then
         rm -f "$temp_list"
         echo "ERROR: Archive does not include installed/$TRIPLET" >&2
@@ -62,12 +62,10 @@ if command -v 7z >/dev/null 2>&1; then
     fi
     rm -f "$temp_list"
 else
-    echo "WARNING: 7z is not installed, skipping archive content check"
+    echo "WARNING: 7zip command is not available (tried: 7z, 7zz, 7za), skipping archive content check"
 fi
 
 echo "Running ABI verification"
 TRIPLET="$TRIPLET" OUTPUT_DIR="$OUTPUT_DIR" bash -e "$SCRIPT_DIR/verify-abi.sh"
 
 echo "Verification complete"
-echo "  archive: $ARCHIVE_PATH"
-echo "  metadata: $METADATA_PATH"
