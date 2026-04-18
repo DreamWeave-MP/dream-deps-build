@@ -15,6 +15,9 @@ BOX_NAME="${BOX_NAME:-openmw-deps-${PROFILE}}"
 echo "=== Running preflight doctor (distrobox mode) ==="
 MODE=distrobox TRIPLET="$TRIPLET" OUTPUT_DIR="$OUTPUT_DIR" PROFILE="$PROFILE" bash -e "$SCRIPT_DIR/doctor.sh"
 
+echo "=== Removing any existing $BOX_NAME ==="
+distrobox rm --force "$BOX_NAME" 2>/dev/null || true
+
 echo "=== Creating fresh $BOX_NAME ==="
 distrobox create --yes --name "$BOX_NAME" --image "$BUILD_IMAGE"
 
