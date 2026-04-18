@@ -21,7 +21,9 @@ jobs:
     name: ${{ matrix.args.triplet }}
     steps:
       - name: Install git for checkout
-        run: dnf install -y git curl p7zip
+        run: |
+          dnf install -y git curl epel-release
+          dnf install -y p7zip
 
       - uses: actions/checkout@v4
 
