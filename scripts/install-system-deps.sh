@@ -27,6 +27,7 @@ enable_crb() {
 common_packages=(
     git
     tar
+    p7zip
     zip
     unzip
     curl
