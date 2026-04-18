@@ -13,7 +13,11 @@ run_as_root() {
     if [ "$(id -u)" -eq 0 ]; then
         "$@"
     elif command -v sudo >/dev/null 2>&1; then
-        sudo "$@"
+        sudo env \
+            PROFILE="$PROFILE" \
+            OPENMW_DEPS_BUILD_CONF="$OPENMW_DEPS_BUILD_CONF" \
+            OPENMW_DEPS_REPO_ROOT="$OPENMW_DEPS_REPO_ROOT" \
+            "$@"
     else
         echo "ERROR: Need root privileges to run '$*' and sudo is not available" >&2
         exit 1
