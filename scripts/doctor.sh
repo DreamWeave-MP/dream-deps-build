@@ -70,6 +70,7 @@ echo "  vcpkg revision: $VCPKG_REVISION"
 check_command bash "bash is available"
 check_command git "git is available"
 check_command curl "curl is available"
+check_command 7z "7z is available"
 
 if [ -d "$OUTPUT_DIR" ]; then
     if [ -w "$OUTPUT_DIR" ]; then
