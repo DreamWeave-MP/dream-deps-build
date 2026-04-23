@@ -17,15 +17,7 @@
     "libjpeg-turbo",
     "libpng",
     "libxml2",
-    {
-      "name": "lz4",
-      "platform": "linux"
-    },
     "opengl-registry",
-    {
-      "name": "sdl2",
-      "platform": "linux"
-    },
     "tiff",
     "zlib",
     {
