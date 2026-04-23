@@ -17,13 +17,40 @@ jobs:
           - triplet: x64-linux-dynamic
     runs-on: ubuntu-latest
     container:
-      image: almalinux:8
+      image: almalinux:9
     name: ${{ matrix.args.triplet }}
+    env:
+      VCPKG_INSTALLATION_ROOT: /vcpkg
     steps:
-      - name: Install git for checkout
-        run: |
-          dnf install -y git curl epel-release
+      - run: dnf clean all
+      - run: dnf install -y git epel-release dnf-plugins-core
+      - run: dnf config-manager --set-enabled crb
+      - name: Install deps
+        run: >-
           dnf install -y p7zip
+          cmake
+          autoconf-latest
+          autoconf-archive
+          automake
+          libtool
+          pkgconfig
+          mesa-libGL-devel
+          mesa-libEGL-devel
+          libX11-devel
+          libXft-devel
+          libXext-devel
+          libxkbcommon-devel
+          wayland-devel
+          gettext-devel
+          kernel-headers
+          ninja-build
+          gcc-toolset-13
+          texinfo
+          nasm
+          unzip
+          zip
+          tar
+          perl
 
       - uses: actions/checkout@v4
 
@@ -33,29 +60,23 @@ jobs:
           script: |
             core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+      - uses: ./.github/actions/vcpkg-setup
+        with:
+          install-vcpkg: true
 
-      - name: Build deps
-        run: |
-          bash -e scripts/build-all.sh
-          echo "/opt/vcpkg" >> $GITHUB_PATH
-        env:
-          PROFILE: alma8
-          TRIPLET: ${{ matrix.args.triplet }}
-          OUTPUT_DIR: ${{ github.workspace }}
+      - name: Install vcpkg packages
+        run: source /opt/rh/gcc-toolset-13/enable && vcpkg install --overlay-ports=ports --overlay-triplets=triplets --triplet ${{ matrix.args.triplet }} --host-triplet ${{ matrix.args.triplet }}
 
-      - name: Rename exported artifacts
-        run: |
-          mv "vcpkg-${{ matrix.args.triplet }}.7z" "vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}.7z"
-          mv "vcpkg-${{ matrix.args.triplet }}.build-meta" "vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}.build-meta"
-        working-directory: ${{ github.workspace }}
+      - uses: ./.github/actions/vcpkg-export
+        with:
+          output-name: vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}
+          export-type: 7zip
 
       - name: Store exported vcpkg packages
         uses: actions/upload-artifact@v4
         with:
           name: vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}
-          path: |
-            ${{ github.workspace }}/vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}.7z
-            ${{ github.workspace }}/vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}.build-meta
+          path: ${{ github.workspace }}/vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}.7z
 
   macos:
     strategy:

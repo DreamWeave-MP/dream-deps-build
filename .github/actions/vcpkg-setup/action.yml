@@ -1,7 +1,13 @@
 name: vcpkg-setup
+inputs:
+  install-vcpkg:
+    type: boolean
 runs:
   using: 'composite'
   steps:
+    - run: mkdir -p $VCPKG_INSTALLATION_ROOT && git clone https://github.com/microsoft/vcpkg.git "$VCPKG_INSTALLATION_ROOT"
+      shell: bash
+      if: ${{ inputs.install-vcpkg }}
     - run: |
         cd $VCPKG_INSTALLATION_ROOT
         git fetch
@@ -12,3 +18,7 @@ runs:
         cd $VCPKG_INSTALLATION_ROOT
         ./bootstrap-vcpkg.sh -disableMetrics
       shell: bash
+
+    - run: echo "PATH=$VCPKG_INSTALLATION_ROOT:$PATH" >> "$GITHUB_ENV"
+      shell: bash
+      if: ${{ inputs.install-vcpkg }}
