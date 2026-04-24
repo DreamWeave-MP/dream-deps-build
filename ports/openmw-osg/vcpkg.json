@@ -9,10 +9,6 @@
   "dependencies": [
     "collada-dom",
     "freetype",
-    {
-      "name": "fontconfig",
-      "platform": "linux"
-    },
     "libiconv",
     "libjpeg-turbo",
     "libpng",
