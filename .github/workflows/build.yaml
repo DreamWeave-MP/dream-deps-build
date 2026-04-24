@@ -21,6 +21,7 @@ jobs:
     name: ${{ matrix.args.triplet }}
     env:
       VCPKG_INSTALLATION_ROOT: /vcpkg
+      BUILD_AUTOCONF_SHA512: 3f71d459e2127ef2c98b37f11f5284f0c92318ad8d31c5b6034bed370adfe9f3d0f7a12f87e2efced06c11e2a159de4d4a292b751104e83daf11342f25ba9721
     steps:
       - run: dnf clean all
       - run: dnf install -y git epel-release dnf-plugins-core
@@ -29,7 +30,7 @@ jobs:
         run: >-
           dnf install -y p7zip
           cmake
-          autoconf-latest
+          autoconf
           autoconf-archive
           automake
           libtool
@@ -51,6 +52,17 @@ jobs:
           zip
           tar
           perl
+
+      - run: |
+          tmpdir="$(mktemp -d)"
+          tarball="$tmpdir/autoconf.tar.gz"
+          curl -L https://ftp.gnu.org/gnu/autoconf/autoconf-2.72.tar.gz -o "$tarball"
+          printf '%s  %s\n' "$BUILD_AUTOCONF_SHA512" "$tarball" | sha512sum -c -
+          tar xf "$tarball" -C "$tmpdir"
+          cd "$tmpdir/autoconf-2.72"
+          ./configure --prefix=/usr/local
+          make && make install
+          rm -rf "$tmpdir"
 
       - uses: actions/checkout@v4
 
