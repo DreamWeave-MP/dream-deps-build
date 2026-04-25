@@ -1,12 +1,50 @@
 # openmw-deps-build
 
-This is a repository to host CI jobs to build dependencies for OpenMW via vcpkg to be cached as binary artifacts at [https://gitlab.com/OpenMW/openmw-deps](https://gitlab.com/OpenMW/openmw-deps).
+This is a repository to host CI jobs to build dependencies for OpenMW via vcpkg to be cached as binary artifacts at [https://gitlab.com/OpenMW/openmw-deps](https://gitlab.com/OpenMW/openmw-deps). Dependencies are pushed to `openmw-deps` on release.
 
-Jobs start automatically on push to master and automatically push archived artifacts to another git repository.
+## Local Dependency Installation
 
-[Vcpkg has system requirements](https://learn.microsoft.com/en-us/vcpkg/concepts/supported-hosts)
+[Vcpkg has system requirements](https://learn.microsoft.com/en-us/vcpkg/concepts/supported-hosts).
 
-## Secret Setup in CI for Testing
+### Core Commands
+
+- Install: `vcpkg install --overlay-ports=ports --overlay-triplets=triplets --triplet TRIPLET --host-triplet HOST_TRIPLET (usually the same as TRIPLET)`
+- Export: `vcpkg export --x-all-installed --raw --output OUTPUT_DIRECTORY_NAME --output-dir DIRECTORY_TO_OUTPUT_INTO`
+
+### Linux
+
+In CI, we build using almalinux for maximum distro compatibility. If you are not on almalinux, you can run the commands that are done in the [./.github/workflows/build.yaml](./.github/workflows/build.yaml) under the linux matrix in a Dockerfile or distrobox that pulls from `almalinux:9` and then install vcpkg and the dependencies listed in the CI and then proceed with the core vcpkg commands with the `x64-linux-dynamic` triplet.
+
+### MacOS
+
+You need to install the following: `brew install autoconf autoconf-archive automake`
+
+1. `vcpkg install --overlay-ports=ports --overlay-triplets=triplets --triplet arm64-osx-dynamic --host-triplet arm64-osx-dynamic`
+1. `vcpkg export --x-all-installed --raw --output vcpkg-macos-test --output-dir DIRECTORY`
+
+### Windows
+
+Running the core commands should work out of the box on a Windows machine of the matching architecture.
+
+## Testing Dependencies with OpenMW Locally
+
+## MacOS
+
+You will need to change the variables towards the top of the OpenMW `before_script.macos.sh` file to:
+
+```
+DEPENDENCIES_ROOT_PATH="/DIRECTORY/vcpkg-macos-test"
+```
+
+And then proceed as normal.
+
+## Linux
+
+TBD
+
+## Secret Setup in CI for E2E Testing
+
+*This is so the built dependencies show up in your fork of [https://gitlab.com/OpenMW/openmw-deps](https://gitlab.com/OpenMW/openmw-deps).*
 
 You can test the repo is working on your own fork using a deploy key and a gpg key you generate.
 
@@ -22,17 +60,4 @@ Also the following [**variable**](https://docs.github.com/en/actions/learn-githu
 
 * `PUSH_URL` with target SSH-based URL for `git push` command (e.g. `git@gitlab.com:OpenMW/openmw-deps.git` or your fork).
 
-Any pushes should create a branch/commit on the openmw-dep repo. However, the manifest file links will not work. You will need to create a tag/release for that to work.
-
-## Testing OpenMW with MacOS (for building on arm64 for arm64)
-
-You need to install the following: `brew install autoconf autoconf-archive automake`
-
-1. `vcpkg install --overlay-ports=ports --overlay-triplets=triplets --triplet arm64-osx-dynamic --host-triplet arm64-osx-dynamic`
-1. `vcpkg export --x-all-installed --raw --output vcpkg-macos-test --output-dir DIRECTORY`
-
-You will need to change the variables towards the top of the OpenMW `before_script.macos.sh` file to:
-
-```
-DEPENDENCIES_ROOT_PATH="/DIRECTORY/vcpkg-macos-test"
-```
+Any pushes should create a branch/commit on the openmw-dep repo. However, the manifest file links will not work in your fork of `openmw-deps`. You will need to create a tag/release for that to work.
