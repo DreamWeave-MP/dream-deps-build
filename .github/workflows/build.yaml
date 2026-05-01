@@ -15,7 +15,10 @@ jobs:
       matrix:
         args:
           - triplet: x64-linux-dynamic
-    runs-on: ubuntu-latest
+            runner_image: ubuntu-latest
+          - triplet: arm64-linux-dynamic
+            runner_image: ubuntu-24.04-arm
+    runs-on: ${{ matrix.args.runner_image }}
     container:
       image: almalinux:9
     name: ${{ matrix.args.triplet }}
