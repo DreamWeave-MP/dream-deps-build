@@ -266,6 +266,7 @@ jobs:
         mv vcpkg-arm64-osx-dynamic-${{ github.sha }}/vcpkg-arm64-osx-dynamic-${{ github.sha }}.7z vcpkg-arm64-osx-dynamic-${{ env.file }}.7z
         mv vcpkg-x64-osx-dynamic-${{ github.sha }}/vcpkg-x64-osx-dynamic-${{ github.sha }}.7z vcpkg-x64-osx-dynamic-${{ env.file }}.7z
         mv vcpkg-x64-linux-dynamic-${{ github.sha }}/vcpkg-x64-linux-dynamic-${{ github.sha }}.7z vcpkg-x64-linux-dynamic-${{ env.file }}.7z
+        mv vcpkg-arm64-linux-dynamic-${{ github.sha }}/vcpkg-arm64-linux-dynamic-${{ github.sha }}.7z vcpkg-arm64-linux-dynamic-${{ env.file }}.7z
 
     - name: Release
       if: startsWith(github.ref, 'refs/tags/')
