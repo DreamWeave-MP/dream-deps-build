@@ -15,4 +15,9 @@ runs:
           echo "${{ github.server_url }}/${{ github.repository }}/releases/download/${{ env.file }}/${file}" > "openmw-deps/${{ inputs.subdirectory }}/$filename"
           shasum -a 512 "$file" >> "openmw-deps/${{ inputs.subdirectory }}/$filename"
         done
+        for file in ${{ inputs.file-pattern }}.tar.xz; do
+          filename=$(echo "$file" | sed -r 's/\.tar.xz/\-manifest.txt/')
+          echo "${{ github.server_url }}/${{ github.repository }}/releases/download/${{ env.file }}/${file}" > "openmw-deps/${{ inputs.subdirectory }}/$filename"
+          shasum -a 512 "$file" >> "openmw-deps/${{ inputs.subdirectory }}/$filename"
+        done
       shell: bash

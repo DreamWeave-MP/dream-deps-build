@@ -5,7 +5,7 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - run: mkdir -p $VCPKG_INSTALLATION_ROOT && git clone https://github.com/microsoft/vcpkg.git "$VCPKG_INSTALLATION_ROOT"
+    - run: mkdir $VCPKG_INSTALLATION_ROOT && git clone https://github.com/microsoft/vcpkg.git "$VCPKG_INSTALLATION_ROOT"
       shell: bash
       if: ${{ inputs.install-vcpkg }}
     - run: |

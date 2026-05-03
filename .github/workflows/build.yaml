@@ -31,8 +31,7 @@ jobs:
       - run: dnf config-manager --set-enabled crb
       - name: Install deps
         run: >-
-          dnf install -y p7zip
-          cmake
+          dnf install -y cmake
           autoconf
           autoconf-archive
           automake
@@ -84,14 +83,16 @@ jobs:
 
       - uses: ./.github/actions/vcpkg-export
         with:
-          output-name: vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}
-          export-type: 7zip
+          output-name: vcpkg-export
+          export-type: raw
+
+      - run: tar -cf vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}.tar.xz vcpkg-export/
 
       - name: Store exported vcpkg packages
         uses: actions/upload-artifact@v4
         with:
           name: vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}
-          path: ${{ github.workspace }}/vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}.7z
+          path: ${{ github.workspace }}/vcpkg-${{ matrix.args.triplet }}-${{ github.sha }}.tar.xz
 
   macos:
     strategy:
@@ -265,8 +266,8 @@ jobs:
         mv vcpkg-arm64-windows-2022-pdb-${{ github.sha }}/vcpkg-arm64-windows-2022-pdb-${{ github.sha }}.7z vcpkg-arm64-windows-2022-pdb-${{ env.file }}.7z
         mv vcpkg-arm64-osx-dynamic-${{ github.sha }}/vcpkg-arm64-osx-dynamic-${{ github.sha }}.7z vcpkg-arm64-osx-dynamic-${{ env.file }}.7z
         mv vcpkg-x64-osx-dynamic-${{ github.sha }}/vcpkg-x64-osx-dynamic-${{ github.sha }}.7z vcpkg-x64-osx-dynamic-${{ env.file }}.7z
-        mv vcpkg-x64-linux-dynamic-${{ github.sha }}/vcpkg-x64-linux-dynamic-${{ github.sha }}.7z vcpkg-x64-linux-dynamic-${{ env.file }}.7z
-        mv vcpkg-arm64-linux-dynamic-${{ github.sha }}/vcpkg-arm64-linux-dynamic-${{ github.sha }}.7z vcpkg-arm64-linux-dynamic-${{ env.file }}.7z
+        mv vcpkg-x64-linux-dynamic-${{ github.sha }}/vcpkg-x64-linux-dynamic-${{ github.sha }}.7z vcpkg-x64-linux-dynamic-${{ env.file }}.tar.xz
+        mv vcpkg-arm64-linux-dynamic-${{ github.sha }}/vcpkg-arm64-linux-dynamic-${{ github.sha }}.7z vcpkg-arm64-linux-dynamic-${{ env.file }}.tar.xz
 
     - name: Release
       if: startsWith(github.ref, 'refs/tags/')
