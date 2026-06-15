@@ -46,7 +46,6 @@
     {
       "name": "unshield",
       "platform": "osx|linux"
-    },
-    "yaml-cpp"
+    }
   ]
 }
